@@ -1,13 +1,13 @@
 // bounds will print the bounding box (minx,miny,maxx,maxy) for one or more URIs describing GeoJSON files.
 package main
 
-import(
+import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
-	"io"
 	"github.com/paulmach/orb/geojson"
+	"io"
+	"log"
 	"os"
 )
 
@@ -41,12 +41,16 @@ func FeatureFromBytes(ctx context.Context, body []byte) (*geojson.Feature, error
 
 func main() {
 
+	latlon := flag.Bool("latlon", false, "Print bounding box as miny,minx,maxy,maxx.")
+
 	flag.Parse()
 
 	uris := flag.Args()
 
 	ctx := context.Background()
-	
+
+	wr := os.Stdout
+
 	for _, path := range uris {
 
 		f, err := FeatureFromURI(ctx, path)
@@ -58,6 +62,26 @@ func main() {
 		geom := f.Geometry
 		bounds := geom.Bound()
 
-		fmt.Fprintf(os.Stdout, "%f,%f,%f,%f\n", bounds.Min.X(), bounds.Min.Y(), bounds.Max.X(), bounds.Max.Y())
+		var coords []interface{}
+
+		if *latlon {
+
+			coords = []interface{}{
+				bounds.Min.Y(),
+				bounds.Min.X(),
+				bounds.Max.Y(),
+				bounds.Max.X(),
+			}
+		} else {
+
+			coords = []interface{}{
+				bounds.Min.X(),
+				bounds.Min.Y(),
+				bounds.Max.X(),
+				bounds.Max.Y(),
+			}
+		}
+
+		fmt.Fprintf(wr, "%f,%f,%f,%f\n", coords...)
 	}
 }
