@@ -5,13 +5,15 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/paulmach/orb/geojson"
 	"io"
 	"log"
 	"os"
+
+	"github.com/paulmach/orb"
+	"github.com/paulmach/orb/geojson"
 )
 
-func FeatureFromURI(ctx context.Context, uri string) (*geojson.Feature, error) {
+func FeaturesFromURI(ctx context.Context, uri string, featurecollection bool) ([]*geojson.Feature, error) {
 
 	fh, err := os.Open(uri)
 
@@ -21,10 +23,10 @@ func FeatureFromURI(ctx context.Context, uri string) (*geojson.Feature, error) {
 
 	defer fh.Close()
 
-	return FeatureFromReader(ctx, fh)
+	return FeaturesFromReader(ctx, fh, featurecollection)
 }
 
-func FeatureFromReader(ctx context.Context, r io.Reader) (*geojson.Feature, error) {
+func FeaturesFromReader(ctx context.Context, r io.Reader, featurecollection bool) ([]*geojson.Feature, error) {
 
 	body, err := io.ReadAll(r)
 
@@ -32,16 +34,39 @@ func FeatureFromReader(ctx context.Context, r io.Reader) (*geojson.Feature, erro
 		return nil, fmt.Errorf("Failed to read feature, %v", err)
 	}
 
-	return FeatureFromBytes(ctx, body)
+	return FeaturesFromBytes(ctx, body, featurecollection)
 }
 
-func FeatureFromBytes(ctx context.Context, body []byte) (*geojson.Feature, error) {
-	return geojson.UnmarshalFeature(body)
+func FeaturesFromBytes(ctx context.Context, body []byte, featurecollection bool) ([]*geojson.Feature, error) {
+
+	var features []*geojson.Feature
+
+	if featurecollection {
+
+		fc, err := geojson.UnmarshalFeatureCollection(body)
+
+		if err != nil {
+			return nil, fmt.Errorf("Failed to unmarshal featurecollection, %w", err)
+		}
+
+		features = fc.Features
+	} else {
+		f, err := geojson.UnmarshalFeature(body)
+
+		if err != nil {
+			return nil, fmt.Errorf("Failed to unmarshal feature, %w", err)
+		}
+
+		features = []*geojson.Feature{f}
+	}
+
+	return features, nil
 }
 
 func main() {
 
 	latlon := flag.Bool("latlon", false, "Print bounding box as miny,minx,maxy,maxx.")
+	is_featurecollection := flag.Bool("featurecollection", false, "Calculate bounds for GeoJSON FeatureCollection.")
 
 	flag.Parse()
 
@@ -53,14 +78,25 @@ func main() {
 
 	for _, path := range uris {
 
-		f, err := FeatureFromURI(ctx, path)
+		features, err := FeaturesFromURI(ctx, path, *is_featurecollection)
 
 		if err != nil {
-			log.Fatalf("Failed to derive feature from URI, %v", err)
+			log.Fatalf("Failed to derive features from URI, %v", err)
 		}
 
-		geom := f.Geometry
-		bounds := geom.Bound()
+		var bounds orb.Bound
+
+		for i, f := range features {
+
+			f_geom := f.Geometry
+			f_bounds := f_geom.Bound()
+
+			if i == 0 {
+				bounds = f_bounds
+			} else {
+				bounds = bounds.Union(f_bounds)
+			}
+		}
 
 		var coords []interface{}
 

@@ -3,8 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/sfomuseum/go-geojson-tools"
 	"log"
+
+	"github.com/sfomuseum/go-geojson-tools"
 )
 
 func main() {

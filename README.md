@@ -42,3 +42,10 @@ Common tools for describing and working with GeoJSON files.
    "type" : "Feature"
 }
 ```
+
+### bounds
+
+```
+$> ./bin/bounds -latlon -featurecollection /usr/local/sfomuseum/terminals.geojson
+37.610449,-122.393473,37.621206,-122.380808
+```

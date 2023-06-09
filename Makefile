@@ -1,3 +1,5 @@
+GOMOD=vendor
+
 cli:
-	go build -mod vendor -o bin/bounds cmd/bounds/main.go
-	go build -mod vendor -o bin/bbox2feature cmd/bbox2feature/main.go
+	go build -mod $(GOMOD) -ldflags="-s -w" -o bin/bounds cmd/bounds/main.go
+	go build -mod $(GOMOD) -ldflags="-s -w" -o bin/bbox2feature cmd/bbox2feature/main.go

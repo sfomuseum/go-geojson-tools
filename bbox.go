@@ -2,10 +2,11 @@ package geojson
 
 import (
 	"fmt"
-	"github.com/paulmach/orb"
-	"github.com/paulmach/orb/geojson"
 	"strconv"
 	"strings"
+
+	"github.com/paulmach/orb"
+	"github.com/paulmach/orb/geojson"
 )
 
 func BoundingBoxToFeature(str_bbox string, is_latlon bool) (*geojson.Feature, error) {
